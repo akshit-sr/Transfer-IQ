@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:5000";
+const API_BASE = "https://transfer-iq-infosys.onrender.com";
 
 let players = [];
 let currentPlayer = null;
@@ -207,11 +207,11 @@ function runPredict() {
       btn.disabled = false;
       btn.innerHTML = `Predict Next Season 2024/25`;
       resultsEl.innerHTML = `
-        <div class="pred-note">
-          ⚠️ Could not reach the Flask server. Make sure <code>app.py</code> is running on
-          <code>localhost:5000</code>.<br><br>Run: <code>python app.py</code>
-        </div>`;
-      console.error(err);
+      <div class="pred-note">
+        ⚠️ Could not reach the server.<br><br>
+        This might be because the backend is waking up (Render free tier).  
+        Please wait ~30–60 seconds and try again.
+      </div>`;
     });
 }
 

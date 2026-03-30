@@ -1,7 +1,9 @@
 from flask import Flask, jsonify, send_from_directory
+from flask.json.provider import DefaultJSONProvider
 import pandas as pd
 import numpy as np
 import os, json, pickle
+import sys
 
 
 # ── JSON encoder ──────────────────────────────────────────
@@ -155,7 +157,14 @@ class EncoderDecoderLSTM:
 
 # ── App setup ─────────────────────────────────────────────
 app = Flask(__name__, static_folder=".")
-app.json_encoder = NumpyEncoder
+class NumpyJSONProvider(DefaultJSONProvider):
+    def default(self, obj):
+        if isinstance(obj, (np.integer,)):  return int(obj)
+        if isinstance(obj, (np.floating,)): return float(obj)
+        if isinstance(obj, np.ndarray):     return obj.tolist()
+        return super().default(obj)
+
+app.json = NumpyJSONProvider(app)
 
 BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
 CSV_PATH   = os.path.join(BASE_DIR, "player_transfer_value_with_sentiment.csv")
@@ -226,6 +235,10 @@ def load_models():
                 print(f"⚠️  Could not load {fname}: {e}")
 
     return models, None
+
+sys.modules['__main__'].SimpleLSTM = SimpleLSTM
+sys.modules['__main__'].LSTMCell = LSTMCell
+sys.modules['__main__'].EncoderDecoderLSTM = EncoderDecoderLSTM
 
 
 MODELS, MODEL_ERROR = load_models()
@@ -514,11 +527,14 @@ def status():
     })
 
 if __name__ == "__main__":
-    print("\nTransferIQ running at http://localhost:5000")
+    print("\nTransferIQ running...")
+
     if MODEL_ERROR:
         print(f"{MODEL_ERROR}\n")
     else:
         has_ens = MODELS.get("model_xgb_ensemble") is not None
         print(f"LSTM models:     ✅ ready")
         print(f"Ensemble models: {'✅ ready' if has_ens else '⚠️  not found'}\n")
-    app.run(debug=False, port=5000)
+
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
